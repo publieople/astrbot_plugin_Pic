@@ -21,26 +21,26 @@ from astrbot.api import logger
 file_lock = asyncio.Lock()
 
 # 栗次元(t.alcy.cc) 全部 17 个分类,完整映射见 https://t.alcy.cc/
-# ponytail: 单一图源,列表化维护;栗次元官方分页 HTML 是唯一事实源
-IMAGE_API_URLS = [
-    "https://t.alcy.cc/ycy",    # 银次缘
-    "https://t.alcy.cc/moez",   # 萌版自适应
-    "https://t.alcy.cc/ai",     # AI 自适应
-    "https://t.alcy.cc/ysz",    # 原神自适应
-    "https://t.alcy.cc/pc",     # PC 横图
-    "https://t.alcy.cc/moe",    # 萌版横图
-    "https://t.alcy.cc/fj",     # 风景横图
-    "https://t.alcy.cc/bd",     # 白底横图
-    "https://t.alcy.cc/ys",     # 原神横图
-    "https://t.alcy.cc/acg",    # ACG 动图
-    "https://t.alcy.cc/mp",     # 移动竖图
-    "https://t.alcy.cc/moemp",  # 萌版竖图
-    "https://t.alcy.cc/ysmp",   # 原神竖图
-    "https://t.alcy.cc/aimp",   # AI 竖图
-    "https://t.alcy.cc/tx",     # 头像方图
-    "https://t.alcy.cc/lai",    # 七濑胡桃
-    "https://t.alcy.cc/xhl",    # 小狐狸
-]
+# ponytail: dict 化以便用 key 过滤 enabled_categories 配置
+CATEGORIES: dict[str, tuple[str, str]] = {
+    "ycy":   ("银次缘",   "https://t.alcy.cc/ycy"),
+    "moez":  ("萌版自适应", "https://t.alcy.cc/moez"),
+    "ai":    ("AI 自适应",  "https://t.alcy.cc/ai"),
+    "ysz":   ("原神自适应", "https://t.alcy.cc/ysz"),
+    "pc":    ("PC 横图",   "https://t.alcy.cc/pc"),
+    "moe":   ("萌版横图",  "https://t.alcy.cc/moe"),
+    "fj":    ("风景横图",  "https://t.alcy.cc/fj"),
+    "bd":    ("白底横图",  "https://t.alcy.cc/bd"),
+    "ys":    ("原神横图",  "https://t.alcy.cc/ys"),
+    "acg":   ("ACG 动图",  "https://t.alcy.cc/acg"),
+    "mp":    ("移动竖图",  "https://t.alcy.cc/mp"),
+    "moemp": ("萌版竖图",  "https://t.alcy.cc/moemp"),
+    "ysmp":  ("原神竖图",  "https://t.alcy.cc/ysmp"),
+    "aimp":  ("AI 竖图",   "https://t.alcy.cc/aimp"),
+    "tx":    ("头像方图",  "https://t.alcy.cc/tx"),
+    "lai":   ("七濑胡桃",  "https://t.alcy.cc/lai"),
+    "xhl":   ("小狐狸",    "https://t.alcy.cc/xhl"),
+}
 
 ALLOWED_IMAGE_MIMES = {
     "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
@@ -118,8 +118,8 @@ image_manager = ImageManager()
 @register(
     "astrbot_plugin_Pic",
     "ImNotBird / publieople",
-    "随机看图(栗次元为主),支持命令触发与 LLM 自动调用",
-    "v1.7.0",
+    "随机看图(栗次元为主),支持命令触发、LLM 自动调用、可配置图源开关",
+    "v1.8.0",
     "https://github.com/publieople/astrbot_plugin_Pic",
 )
 class ImagePlugin(Star):
@@ -129,6 +129,9 @@ class ImagePlugin(Star):
         self.config = config or {}
         self.max_retries = int(self.config.get("max_retries", 2))
         self.trigger_words = [w.strip() for w in self.config.get("trigger_words", "我要看图").split(",") if w.strip()]
+        # enabled_categories 为空 => 全启用;否则只保留学员勾的 key
+        enabled_keys = self.config.get("enabled_categories") or list(CATEGORIES.keys())
+        self.enabled_urls = [CATEGORIES[k][1] for k in enabled_keys if k in CATEGORIES]
 
     @event_message_type(EventMessageType.ALL)
     async def on_message(self, event: AstrMessageEvent) -> MessageEventResult:
@@ -144,9 +147,9 @@ class ImagePlugin(Star):
 
     @command("看图分类")
     async def cmd_list_sources(self, event: AstrMessageEvent):
-        """看图分类 - 列出所有可用的图源"""
-        lines = ["可用图源:"]
-        for i, url in enumerate(IMAGE_API_URLS, 1):
+        """看图分类 - 列出当前已启用的图源"""
+        lines = ["当前启用的图源:"]
+        for i, url in enumerate(self.enabled_urls, 1):
             lines.append(f"  {i:2d}. {url}")
         yield event.plain_result("\n".join(lines))
 
@@ -165,7 +168,7 @@ class ImagePlugin(Star):
             failed_urls = set()
             filename = None
             for attempt in range(self.max_retries + 1):
-                available_urls = [u for u in IMAGE_API_URLS if u not in failed_urls]
+                available_urls = [u for u in self.enabled_urls if u not in failed_urls]
                 if not available_urls:
                     break
                 selected = random.choice(available_urls)
