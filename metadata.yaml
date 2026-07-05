@@ -1,6 +1,6 @@
 name: astrbot_plugin_Pic
 display_name: 我要看图(栗次元)
 desc: 基于栗次元(t.alcy.cc)17 分类的随机看图插件。支持关键词触发、/看图分类 指令、LLM 自动调用 send_random_pic 工具,以及在插件配置中开关各分类。
-version: v1.8.0
+version: v1.8.1
 author: ImNotBird / publieople
 repo: https://github.com/publieople/astrbot_plugin_Pic

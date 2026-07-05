@@ -119,7 +119,7 @@ image_manager = ImageManager()
     "astrbot_plugin_Pic",
     "ImNotBird / publieople",
     "随机看图(栗次元为主),支持命令触发、LLM 自动调用、可配置图源开关",
-    "v1.8.0",
+    "v1.8.1",
     "https://github.com/publieople/astrbot_plugin_Pic",
 )
 class ImagePlugin(Star):
@@ -159,9 +159,66 @@ class ImagePlugin(Star):
 
         每次只发一张,不要重复调用。
         """
-        result = await self.handle_image_request(event)
+        await self.handle_image_request(event)
         # 工具要返回字符串给 LLM 汇总;event.send 已经把图片发出去了
         return "已发送一张随机图片"
+
+    @command("来点")
+    async def cmd_specific(self, event: AstrMessageEvent, category: str = ""):
+        """来点 [分类] - 发送指定分类的图片。留空 = 随机一张。"""
+        if not category:
+            return await self.handle_image_request(event)
+        key = self._resolve_alias(category.strip())
+        if not key:
+            return event.plain_result(f"未知分类 {category!r},/看图分类 查看列表")
+        url = CATEGORIES[key][1]
+        if url not in self.enabled_urls:
+            return event.plain_result(f"分类 [{CATEGORIES[key][0]}] 已被禁用,无法发送")
+        return await self._send_image(event, url, CATEGORIES[key][0])
+    # ponytail: 17 个分类的别名映射,key 来自 CATEGORIES
+    _ALIAS = {
+        "ycy":   ["ycy", "银次缘"],
+        "moez":  ["moez", "萌版", "萌", "二次元"],  # 萌版自适应 — 用户多半说"二次元"
+        "ai":    ["ai", "ai自适应", "ai图"],
+        "ysz":   ["ysz", "原神自适应"],
+        "pc":    ["pc", "pc横图", "电脑", "横图"],
+        "moe":   ["moe", "萌版横图", "萌横"],
+        "fj":    ["fj", "风景", "风景横图"],
+        "bd":    ["bd", "白底", "白底横图"],
+        "ys":    ["ys", "原神", "原神横图"],
+        "acg":   ["acg", "动图", "acg动图"],  # acg 返 mp4,会被白名单过滤掉
+        "mp":    ["mp", "手机", "竖图", "移动竖图"],
+        "moemp": ["moemp", "萌版竖图", "萌竖"],
+        "ysmp":  ["ysmp", "原神竖图"],
+        "aimp":  ["aimp", "ai竖图"],
+        "tx":    ["tx", "头像", "头像方图"],
+        "lai":   ["lai", "七濑胡桃", "胡桃"],
+        "xhl":   ["xhl", "小狐狸", "狐狸"],
+    }
+
+    def _resolve_alias(self, query: str) -> str | None:
+        q = query.lower().strip()
+        for key, aliases in self._ALIAS.items():
+            if q in [a.lower() for a in aliases]:
+                return key
+        return None
+
+    async def _send_image(self, event: AstrMessageEvent, url: str, label: str) -> MessageEventResult:
+        # ponytail: 走原 ImageManager 的下载/校验/清理 pipeline,只换一个 url
+        filename = await self.image_manager.generate_and_save_image(url)
+        if not filename:
+            return event.plain_result(f"分类 [{label}] 获取失败(可能上游 302/图片格式不支持)")
+        image_path = os.path.join(self.image_manager.imgs_folder, filename)
+        message_chain = event.make_result().file_image(image_path)
+        try:
+            await event.send(message_chain)
+            await asyncio.sleep(1)
+            deleted = await self.image_manager.delete_image(filename)
+            return event.plain_result(f"[{label}] 图片已送达" if deleted else f"[{label}] 缓存清理有点小问题")
+        except Exception as e:
+            logger.warning(f"Send image failed: {e}")
+            await self.image_manager.delete_image(filename)
+            return event.plain_result("网络波动,图片发送失败")
 
     async def handle_image_request(self, event: AstrMessageEvent) -> MessageEventResult:
         try:
