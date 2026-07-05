@@ -1,0 +1,14 @@
+{
+  "max_retries": {
+    "type": "int",
+    "description": "图源失败时最大重试次数",
+    "hint": "默认 2。每个失败的图源会被标记,下次重试跳过,最多换 max_retries+1 个图源。",
+    "default": 2
+  },
+  "trigger_words": {
+    "type": "string",
+    "description": "关键词触发列表(逗号分隔)",
+    "hint": "消息里出现任意一个就触发随机看图。默认:我要看图",
+    "default": "我要看图"
+  }
+}
