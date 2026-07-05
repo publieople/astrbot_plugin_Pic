@@ -23,7 +23,7 @@ file_lock = asyncio.Lock()
 # 栗次元(t.alcy.cc) 全部 17 个分类,完整映射见 https://t.alcy.cc/
 # ponytail: dict 化以便用 key 过滤 enabled_categories 配置
 CATEGORIES: dict[str, tuple[str, str]] = {
-    "ycy":   ("银次缘",   "https://t.alcy.cc/ycy"),
+    "ycy":   ("二次元自适应", "https://t.alcy.cc/ycy"),
     "moez":  ("萌版自适应", "https://t.alcy.cc/moez"),
     "ai":    ("AI 自适应",  "https://t.alcy.cc/ai"),
     "ysz":   ("原神自适应", "https://t.alcy.cc/ysz"),
@@ -177,8 +177,8 @@ class ImagePlugin(Star):
         return await self._send_image(event, url, CATEGORIES[key][0])
     # ponytail: 17 个分类的别名映射,key 来自 CATEGORIES
     _ALIAS = {
-        "ycy":   ["ycy", "银次缘"],
-        "moez":  ["moez", "萌版", "萌", "二次元"],  # 萌版自适应 — 用户多半说"二次元"
+        "ycy":   ["ycy", "二次元", "二次元自适应"],  # ponytail: 用户偏好 ycy = 二次元自适应
+        "moez":  ["moez", "萌版", "萌"],  # 萌版自适应 — 别名里不放"二次元",那是 ycy 的事
         "ai":    ["ai", "ai自适应", "ai图"],
         "ysz":   ["ysz", "原神自适应"],
         "pc":    ["pc", "pc横图", "电脑", "横图"],
