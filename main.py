@@ -175,6 +175,20 @@ class ImagePlugin(Star):
         if url not in self.enabled_urls:
             return event.plain_result(f"分类 [{CATEGORIES[key][0]}] 已被禁用,无法发送")
         return await self._send_image(event, url, CATEGORIES[key][0])
+
+    @command("help")
+    async def cmd_help(self, event: AstrMessageEvent):
+        """help - 显示帮助"""
+        yield event.plain_result(
+            "我要看图(栗次元) 插件使用方法:\n"
+            "/help — 本帮助\n"
+            "/看图分类 — 列出已启用的图源\n"
+            "/来点 [分类] — 发送指定分类的随机图,留空随机\n"
+            "  支持别名:二次元/风景/头像/狐狸等\n"
+            "发送 我要看图 — 关键词触发随机图\n"
+            "LLM 在合适时自动调 send_random_pic"
+        )
+
     # ponytail: 17 个分类的别名映射,key 来自 CATEGORIES
     _ALIAS = {
         "ycy":   ["ycy", "二次元", "二次元自适应"],  # ponytail: 用户偏好 ycy = 二次元自适应
