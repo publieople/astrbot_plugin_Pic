@@ -20,20 +20,26 @@ from astrbot.api import logger
 
 file_lock = asyncio.Lock()
 
-# 随机图源列表 — 栗次元(主体)+ 兜底 3 个公共 API
-# ponytail: 栗次元为主,其他三个只是兜底;想换源直接改这里
+# 栗次元(t.alcy.cc) 全部 17 个分类,完整映射见 https://t.alcy.cc/
+# ponytail: 单一图源,列表化维护;栗次元官方分页 HTML 是唯一事实源
 IMAGE_API_URLS = [
-    "https://t.alcy.cc/ysz",
-    "https://t.alcy.cc/moez",
-    "https://t.alcy.cc/ycy",
-    "https://t.alcy.cc/moe",
-    "https://t.alcy.cc/pc",
-    "https://t.alcy.cc/ysmp",
-    "https://t.alcy.cc/moemp",
-    "https://t.alcy.cc/mp",
-    "https://api.sretna.cn/api/pc.php",
-    "https://img.chuyel.top/api",
-    "https://www.dmoe.cc/random.php",
+    "https://t.alcy.cc/ycy",    # 银次缘
+    "https://t.alcy.cc/moez",   # 萌版自适应
+    "https://t.alcy.cc/ai",     # AI 自适应
+    "https://t.alcy.cc/ysz",    # 原神自适应
+    "https://t.alcy.cc/pc",     # PC 横图
+    "https://t.alcy.cc/moe",    # 萌版横图
+    "https://t.alcy.cc/fj",     # 风景横图
+    "https://t.alcy.cc/bd",     # 白底横图
+    "https://t.alcy.cc/ys",     # 原神横图
+    "https://t.alcy.cc/acg",    # ACG 动图
+    "https://t.alcy.cc/mp",     # 移动竖图
+    "https://t.alcy.cc/moemp",  # 萌版竖图
+    "https://t.alcy.cc/ysmp",   # 原神竖图
+    "https://t.alcy.cc/aimp",   # AI 竖图
+    "https://t.alcy.cc/tx",     # 头像方图
+    "https://t.alcy.cc/lai",    # 七濑胡桃
+    "https://t.alcy.cc/xhl",    # 小狐狸
 ]
 
 ALLOWED_IMAGE_MIMES = {
